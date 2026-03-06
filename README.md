@@ -15,12 +15,12 @@ Unified MCP Server Manager for AI Agent CLIs.
 
 ### macOS / Windows
 
-Download the latest release from [Releases](https://github.com/hiclaw/mcp-manager/releases).
+Download the latest release from [Releases](https://github.com/HMYDK/mcp-manager/releases).
 
 ### From Source
 
 ```bash
-git clone https://github.com/hiclaw/mcp-manager.git
+git clone https://github.com/HMYDK/mcp-manager.git
 cd mcp-manager
 npm install
 npm run dev
