@@ -1,6 +1,12 @@
 # MCP Manager
 
-Unified MCP Server Manager for AI Agent CLIs.
+**跨平台桌面应用** - 统一管理 MCP Server，让各种 AI Agent CLI 复用同一套配置。
+
+## 🖥️ 平台支持
+
+- ✅ macOS 12.0+
+- ✅ Windows 10+
+- ⏳ Linux（计划中）
 
 ## Features
 
@@ -11,27 +17,30 @@ Unified MCP Server Manager for AI Agent CLIs.
 - **Status Monitoring**: Real-time server status (running/stopped/error)
 - **Dark/Light Theme**: Beautiful UI with theme support
 
-## Installation
+## 📥 安装
 
-### macOS / Windows
+### macOS / Windows（推荐）
 
-Download the latest release from [Releases](https://github.com/HMYDK/mcp-manager/releases).
+**下载桌面应用安装包**：[Releases](https://github.com/HMYDK/mcp-manager/releases)
 
-### From Source
+- macOS: `.dmg` 或 `.zip`
+- Windows: `.exe` 安装程序
+
+### 从源码构建
 
 ```bash
 git clone https://github.com/HMYDK/mcp-manager.git
 cd mcp-manager
 npm install
-npm run dev
+npm run electron:build
 ```
 
-## Usage
+## 💻 使用说明
 
-1. Launch MCP Manager
-2. Scan for installed MCP servers or add manually
-3. Enable servers for your preferred AI CLIs
-4. Manage server lifecycle (start/stop/restart)
+1. **启动桌面应用** - 双击安装包或从源码运行
+2. **扫描 MCP Server** - 自动发现已安装的 npm/pip 包
+3. **配置 CLI 集成** - 一键为 Claude Code、Gemini CLI、QoderCLI 启用
+4. **管理 Server 生命周期** - 启动/停止/监控状态
 
 ## Built With
 
