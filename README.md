@@ -22,12 +22,22 @@
 - SwiftUI (macOS 14+)
 - 无前端 Web 运行时依赖
 
-## 运行
+## 运行（推荐）
+
+使用 `.app` 启动方式，确保窗口以前台 GUI 形式出现：
+
+```bash
+./scripts/run-macos-app.sh
+```
+
+## 运行（开发）
 
 ```bash
 swift build
 swift run MCPManagerMac
 ```
+
+说明：`swift run` 在某些终端上下文会被 LaunchServices 识别为后台进程（BackgroundOnly），导致“进程在跑但看不到窗口”。推荐始终使用 `run-macos-app.sh` 启动。
 
 ## 目录结构
 

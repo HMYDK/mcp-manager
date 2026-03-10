@@ -5,3 +5,4 @@ release
 *.log
 .build
 .swiftpm
+.run
