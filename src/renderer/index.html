@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MCP Manager</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="window-shell">
+      <header class="titlebar">
+        <div class="title-group">
+          <h1>MCP Manager</h1>
+          <p>官方目录统一管理本地 MCP，并检测在各 CLI 中是否生效</p>
+        </div>
+
+        <div class="title-actions">
+          <button id="btn-scan" class="btn btn-secondary">检测生效</button>
+          <button id="btn-sync" class="btn btn-primary">同步并检测</button>
+        </div>
+      </header>
+
+      <div class="status-strip">
+        <span id="health-summary" class="summary-pill">正在加载...</span>
+        <span id="workspace-label" class="workspace-label"></span>
+      </div>
+
+      <div class="app-layout">
+        <aside class="panel sidebar-panel">
+          <div class="panel-head">
+            <h2>CLI 生效状态</h2>
+            <button id="btn-refresh" class="btn btn-small">刷新</button>
+          </div>
+          <div id="tool-status-list" class="tool-status-list"></div>
+        </aside>
+
+        <main class="main-column">
+          <section class="panel">
+            <div class="panel-head">
+              <h2>MCP 服务</h2>
+              <button id="btn-add-server" class="btn btn-small">新增服务</button>
+            </div>
+            <div id="server-list" class="server-list"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h2>启用矩阵</h2>
+              <p class="subline">勾选表示该 CLI 将启用对应 MCP</p>
+            </div>
+            <div id="matrix-wrap" class="matrix-wrap"></div>
+          </section>
+
+          <section class="panel">
+            <h2>操作日志</h2>
+            <pre id="log" class="log"></pre>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <template id="server-item-template">
+      <article class="server-item">
+        <div class="server-form-grid">
+          <label>
+            <span>名称</span>
+            <input class="text" data-key="name" placeholder="filesystem" />
+          </label>
+          <label>
+            <span>命令</span>
+            <input class="text" data-key="command" placeholder="npx" />
+          </label>
+          <label class="full">
+            <span>参数（空格分隔）</span>
+            <input class="text" data-key="args" placeholder="-y @modelcontextprotocol/server-filesystem /path/to/dir" />
+          </label>
+          <label>
+            <span>工作目录（可选）</span>
+            <input class="text" data-key="cwd" placeholder="/Users/you/project" />
+          </label>
+          <label>
+            <span>环境变量 JSON（可选）</span>
+            <input class="text" data-key="env" placeholder='{"API_KEY":"xxx"}' />
+          </label>
+          <label class="full">
+            <span>描述</span>
+            <input class="text" data-key="description" placeholder="用于读取本地工程文件" />
+          </label>
+        </div>
+        <div class="server-actions">
+          <button data-action="save" class="btn btn-small">保存</button>
+          <button data-action="delete" class="btn btn-small btn-danger">删除</button>
+        </div>
+      </article>
+    </template>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>
