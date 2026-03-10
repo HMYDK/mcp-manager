@@ -22,6 +22,11 @@
 - SwiftUI (macOS 14+)
 - 无前端 Web 运行时依赖
 
+## 仓库约束
+
+- 当前仓库仅保留 Swift/SwiftUI 的 macOS 原生应用代码。
+- 已移除 Electron / Node.js 渲染层与打包相关文件（如 `src/`、`package.json`、`package-lock.json`）。
+
 ## 运行（推荐）
 
 使用 `.app` 启动方式，确保窗口以前台 GUI 形式出现：
