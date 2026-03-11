@@ -12,7 +12,7 @@ struct ContentView: View {
             MainWorkspaceView()
         }
         .toolbar {
-            ToolbarItemGroup(placement: .automatic) {
+            ToolbarItemGroup(placement: .primaryAction) {
                 Button {
                     viewModel.scanOnly()
                 } label: {
@@ -33,17 +33,30 @@ struct ContentView: View {
 private struct SidebarStatusView: View {
     @EnvironmentObject private var viewModel: AppViewModel
 
+    private var diagnosisStats: (effective: Int, partial: Int, notEffective: Int, total: Int) {
+        let effective = viewModel.diagnostics.filter { $0.status == .effective }.count
+        let partial = viewModel.diagnostics.filter { $0.status == .partial }.count
+        let notEffective = viewModel.diagnostics.filter { $0.status == .notEffective }.count
+        return (effective, partial, notEffective, viewModel.diagnostics.count)
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 10) {
                 Text("CLI 生效状态")
                     .font(.title3.weight(.semibold))
                 Text(viewModel.statusSummary)
                     .font(.callout)
                     .foregroundStyle(.secondary)
+
+                HStack(spacing: 8) {
+                    QuickStatPill(title: "已生效", value: diagnosisStats.effective, color: .green)
+                    QuickStatPill(title: "部分生效", value: diagnosisStats.partial, color: .orange)
+                    QuickStatPill(title: "未生效", value: diagnosisStats.notEffective, color: .red)
+                }
             }
-            .padding(.horizontal, 12)
-            .padding(.top, 8)
+
+            Divider()
 
             ScrollView {
                 VStack(spacing: 10) {
@@ -51,11 +64,35 @@ private struct SidebarStatusView: View {
                         ToolDiagnosisCard(tool: tool, diagnosis: viewModel.diagnosis(for: tool.id))
                     }
                 }
-                .padding(12)
+                .padding(.bottom, 12)
             }
         }
+        .padding(14)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(.ultraThinMaterial)
+    }
+}
+
+private struct QuickStatPill: View {
+    let title: String
+    let value: Int
+    let color: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("\(value)")
+                .font(.headline.weight(.semibold))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(color.opacity(0.14))
+        )
     }
 }
 
@@ -151,7 +188,7 @@ private struct MainWorkspaceView: View {
 
                 HStack(alignment: .top, spacing: 14) {
                     ServerListPanel()
-                        .frame(minWidth: 280, maxWidth: 340)
+                        .frame(minWidth: 300, maxWidth: 360)
                     ServerEditorPanel()
                         .frame(maxWidth: .infinity)
                 }
@@ -171,48 +208,83 @@ private struct MainWorkspaceView: View {
     }
 
     private var workspaceHeader: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("工作区")
-                    .font(.headline)
-                Text(viewModel.state.workspaceRoot)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .textSelection(.enabled)
-            }
-
-            Spacer()
-
-            Button {
-                if let selected = selectDirectoryPanel(initialPath: viewModel.state.workspaceRoot) {
-                    viewModel.setWorkspaceRoot(selected)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("MCP 控制台")
+                        .font(.title2.weight(.semibold))
+                    Text(viewModel.state.workspaceRoot)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
                 }
-            } label: {
-                Label("切换工作区", systemImage: "folder")
+
+                Spacer()
+
+                Button {
+                    if let selected = selectDirectoryPanel(initialPath: viewModel.state.workspaceRoot) {
+                        viewModel.setWorkspaceRoot(selected)
+                    }
+                } label: {
+                    Label("切换工作区", systemImage: "folder")
+                }
+
+                Button {
+                    viewModel.addServer()
+                } label: {
+                    Label("新增 MCP", systemImage: "plus")
+                }
+                .buttonStyle(.borderedProminent)
             }
 
-            Button {
-                viewModel.addServer()
-            } label: {
-                Label("新增 MCP", systemImage: "plus")
+            HStack(spacing: 10) {
+                Label("MCP 数量：\(viewModel.state.servers.count)", systemImage: "shippingbox")
+                    .font(.caption)
+                Label("CLI 数量：\(viewModel.tools.count)", systemImage: "terminal")
+                    .font(.caption)
             }
-            .buttonStyle(.borderedProminent)
+            .foregroundStyle(.secondary)
         }
-        .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(14)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 
 private struct ServerListPanel: View {
     @EnvironmentObject private var viewModel: AppViewModel
+    @State private var searchText = ""
+
+    private var filteredServers: [MCPServer] {
+        let source = viewModel.state.servers
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return source
+        }
+
+        return source.filter {
+            $0.name.localizedCaseInsensitiveContains(trimmed) ||
+            $0.command.localizedCaseInsensitiveContains(trimmed)
+        }
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("MCP 列表")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("MCP 列表")
+                    .font(.headline)
+                Spacer()
+                Text("\(filteredServers.count)")
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(.thinMaterial, in: Capsule())
+            }
+
+            TextField("搜索名称或命令", text: $searchText)
+                .textFieldStyle(.roundedBorder)
 
             List(selection: $viewModel.selectedServerID) {
-                ForEach(viewModel.state.servers) { server in
+                ForEach(filteredServers) { server in
                     VStack(alignment: .leading, spacing: 2) {
                         Text(server.name)
                             .font(.body.weight(.medium))
@@ -279,7 +351,7 @@ private struct ServerEditorPanel: View {
                 .frame(minHeight: 240)
 
                 if !validationMessage.isEmpty {
-                    Text(validationMessage)
+                    Label(validationMessage, systemImage: "exclamationmark.triangle.fill")
                         .font(.footnote)
                         .foregroundStyle(.red)
                 }
