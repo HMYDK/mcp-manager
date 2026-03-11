@@ -7,10 +7,11 @@ struct ContentView: View {
     var body: some View {
         NavigationSplitView {
             SidebarStatusView()
-                .navigationSplitViewColumnWidth(min: 320, ideal: 360)
+                .navigationSplitViewColumnWidth(min: 300, ideal: 340)
         } detail: {
             MainWorkspaceView()
         }
+        .navigationSplitViewStyle(.balanced)
         .toolbar {
             ToolbarItemGroup(placement: .automatic) {
                 Button {
@@ -34,28 +35,44 @@ private struct SidebarStatusView: View {
     @EnvironmentObject private var viewModel: AppViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("CLI 生效状态")
-                    .font(.title3.weight(.semibold))
-                Text(viewModel.statusSummary)
-                    .font(.callout)
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("MCP Manager")
+                    .font(.title2.weight(.semibold))
+                Text("参考 macOS 应用的侧边状态总览")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            .padding(.horizontal, 14)
+
+            MacPanel {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("CLI 生效状态")
+                        .font(.headline)
+                    Text(viewModel.statusSummary)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    HStack(spacing: 8) {
+                        BadgeMetric(title: "CLI", value: "\(viewModel.tools.count)", color: .blue)
+                        BadgeMetric(title: "MCP", value: "\(viewModel.state.servers.count)", color: .purple)
+                    }
+                }
+            }
             .padding(.horizontal, 12)
-            .padding(.top, 8)
 
             ScrollView {
                 VStack(spacing: 10) {
                     ForEach(viewModel.tools) { tool in
                         ToolDiagnosisCard(tool: tool, diagnosis: viewModel.diagnosis(for: tool.id))
+                            .padding(.horizontal, 12)
                     }
                 }
-                .padding(12)
+                .padding(.bottom, 12)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.ultraThinMaterial)
+        .background(Color(nsColor: .controlBackgroundColor))
     }
 }
 
@@ -64,32 +81,27 @@ private struct ToolDiagnosisCard: View {
     let diagnosis: ToolDiagnosis?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Text(tool.name)
-                    .font(.headline)
-                Spacer()
-                StatusBadge(status: diagnosis?.status ?? .notEffective)
+        MacPanel {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    Image(systemName: "terminal")
+                        .foregroundStyle(.secondary)
+                    Text(tool.name)
+                        .font(.headline)
+                    Spacer()
+                    StatusBadge(status: diagnosis?.status ?? .notEffective)
+                }
+
+                line("命令", diagnosis?.cliInstalled == true ? "\(tool.cliCommand) (\(diagnosis?.cliPath ?? ""))" : "未安装")
+                line("官方路径", tool.officialPath)
+                line("当前已配置 MCP", aliasText(diagnosis?.configuredAliases))
+                line("外部已有 MCP", aliasText(diagnosis?.unmanagedConfigured))
+
+                Text(diagnosis?.summary ?? "等待检测")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-
-            line("命令", diagnosis?.cliInstalled == true ? "\(tool.cliCommand) (\(diagnosis?.cliPath ?? ""))" : "未安装")
-            line("官方路径", tool.officialPath)
-            line("当前已配置 MCP", aliasText(diagnosis?.configuredAliases))
-            line("外部已有 MCP", aliasText(diagnosis?.unmanagedConfigured))
-
-            Text(diagnosis?.summary ?? "等待检测")
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(.thickMaterial)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
-        )
     }
 
     private func line(_ label: String, _ value: String) -> some View {
@@ -111,6 +123,44 @@ private struct ToolDiagnosisCard: View {
             return "无"
         }
         return values.joined(separator: ", ")
+    }
+}
+
+private struct BadgeMetric: View {
+    let title: String
+    let value: String
+    let color: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(color)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(color.opacity(0.12)))
+    }
+}
+
+private struct MacPanel<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        content
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(.regularMaterial)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(.white.opacity(0.22), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.06), radius: 10, x: 0, y: 4)
     }
 }
 
@@ -163,7 +213,7 @@ private struct MainWorkspaceView: View {
         }
         .background(
             LinearGradient(
-                colors: [Color(nsColor: .windowBackgroundColor), Color(nsColor: .underPageBackgroundColor)],
+                colors: [Color(nsColor: .windowBackgroundColor), Color(nsColor: .underPageBackgroundColor).opacity(0.7)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -199,7 +249,10 @@ private struct MainWorkspaceView: View {
             .buttonStyle(.borderedProminent)
         }
         .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.regularMaterial)
+        )
     }
 }
 
@@ -242,7 +295,10 @@ private struct ServerListPanel: View {
             }
         }
         .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.regularMaterial)
+        )
         .onAppear {
             viewModel.selectFirstServerIfNeeded()
         }
@@ -267,15 +323,14 @@ private struct ServerEditorPanel: View {
                 .font(.headline)
 
             if let binding = selectedServerBinding {
-                Form {
-                    TextField("名称", text: binding.name)
-                    TextField("命令", text: binding.command)
-                    TextField("参数（空格分隔）", text: $argsText)
-                    TextField("工作目录（可选）", text: binding.cwd)
-                    TextField("环境变量 JSON", text: $envText)
-                    TextField("说明", text: binding.description)
+                VStack(spacing: 10) {
+                    inputRow(title: "名称") { TextField("例如：filesystem", text: binding.name) }
+                    inputRow(title: "命令") { TextField("例如：npx", text: binding.command) }
+                    inputRow(title: "参数") { TextField("空格分隔", text: $argsText) }
+                    inputRow(title: "工作目录") { TextField("可选", text: binding.cwd) }
+                    inputRow(title: "环境变量") { TextField("JSON", text: $envText) }
+                    inputRow(title: "说明") { TextField("可选", text: binding.description) }
                 }
-                .formStyle(.grouped)
                 .frame(minHeight: 240)
 
                 if !validationMessage.isEmpty {
@@ -299,13 +354,26 @@ private struct ServerEditorPanel: View {
             }
         }
         .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.regularMaterial)
+        )
         .onAppear {
             reloadDraft()
         }
         .onChange(of: viewModel.selectedServerID) { _, _ in
             reloadDraft()
             validationMessage = ""
+        }
+    }
+
+    private func inputRow<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            content()
+                .textFieldStyle(.roundedBorder)
         }
     }
 
@@ -436,7 +504,10 @@ private struct MatrixPanel: View {
             }
         }
         .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.regularMaterial)
+        )
     }
 
     private func binding(serverID: String, toolID: String) -> Binding<Bool> {
@@ -481,7 +552,10 @@ private struct LogPanel: View {
             )
         }
         .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.regularMaterial)
+        )
     }
 }
 
